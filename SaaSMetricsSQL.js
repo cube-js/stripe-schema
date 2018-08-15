@@ -1,3 +1,5 @@
+const doNotRecognizeChurnIfSubscriptionLessThan = '0 day';
+
 const paidInvoicesSubquery = `SELECT
             *,
             (
@@ -74,7 +76,7 @@ const allInvoicesSubquery = `SELECT
             subscriptions.id = cc.subscription_id AND
             customers.id = subscriptions.customer AND
             (
-              subscriptions.ended_at > INTERVAL '28 day' +
+              subscriptions.ended_at > INTERVAL '${doNotRecognizeChurnIfSubscriptionLessThan}' +
               COALESCE(subscriptions.trial_end, subscriptions.start)
             OR
               subscriptions.ended_at IS NULL
