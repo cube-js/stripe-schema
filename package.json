@@ -1,0 +1,13 @@
+{
+  "name": "stripe-schema",
+  "version": "1.0.0",
+  "engines": {
+    "node": "8.2.1"
+  },
+  "description": "Cube.js Data Schema Package for Stripe",
+  "main": "index.js",
+  "author": "Statsbot, Inc",
+  "license": "MIT",
+  "dependencies": {
+  }
+}
