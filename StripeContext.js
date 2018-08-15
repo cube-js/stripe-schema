@@ -1,6 +1,8 @@
 context('Stripe', {
   contextMembers: [
     StripeCustomers,
-    StripeCharges
+    StripeCharges,
+
+    StripeSaaSMetrics
   ]
 });

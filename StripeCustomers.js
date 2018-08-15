@@ -30,6 +30,11 @@ cube(`StripeCustomers`, {
     email: {
       sql: `email`,
       type: `string`
+    },
+
+    description: {
+      sql: `description`,
+      type: `string`
     }
   }
 });
