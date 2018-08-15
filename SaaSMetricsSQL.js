@@ -26,7 +26,7 @@ const paidInvoicesSubquery = `SELECT
                 invoices_items.plan->>'id' as plan_id,
                 invoices_items.plan->>'interval' as plan_interval,
                 invoices_items.plan->>'name' as plan_name,
-                (invoices.subtotal - (invoices.total - coalesce(invoices.tax, 0))) as discount_amount,
+                (coalesce(invoices.subtotal,0) - (coalesce(invoices.total,0) - coalesce(invoices.tax, 0))) as discount_amount,
                 invoices_items.amount as invoice_amount
               FROM
                 ${SCHEMA}.invoices
