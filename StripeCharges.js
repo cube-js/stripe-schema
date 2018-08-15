@@ -5,7 +5,7 @@ cube(`StripeCharges`, {
   joins: {
     StripeCustomers: {
       relationship: `belongsTo`,
-      sql: `${StripeCharges}.customer_id = ${StripeCustomers}.id`
+      sql: `${StripeCharges}.customer = ${StripeCustomers}.id`
     }
   },
 
@@ -84,7 +84,7 @@ cube(`StripeCharges`, {
     },
 
     amountRefunded: {
-      sql: `1.0 * ${CUBE}.amount_refunded / 100`,
+      sql: `1.0 * COALESCE(${CUBE}.amount_refunded, 0) / 100`,
       type: `number`,
       format: `currency`
     },

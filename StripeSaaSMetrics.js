@@ -23,6 +23,13 @@ cube(`StripeSaaSMetrics`, {
       format: `currency`
     },
 
+    arr: {
+      title: `ARR`,
+      sql: `${mrr} * 12`,
+      type: `number`,
+      format: `currency`
+    },
+
     churnedMrr: {
       title: `Churned MRR`,
       sql: `mrr`,

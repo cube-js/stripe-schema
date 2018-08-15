@@ -11,34 +11,34 @@ const paidInvoicesSubquery = `SELECT
           FROM
             (
               SELECT
-                stripe.invoices.id as invoice_id,
-                stripe.invoices.date as created,
-                stripe.invoices.currency,
-                stripe.subscriptions.ended_at,
-                LAST_VALUE(stripe.invoices.id) OVER(
-                  PARTITION BY stripe.invoices.subscription_id
+                invoices.id as invoice_id,
+                invoices.date as created,
+                invoices.currency,
+                subscriptions.ended_at,
+                LAST_VALUE(invoices.id) OVER(
+                  PARTITION BY invoices.subscription
                   ORDER BY
-                    stripe.invoices.date ROWS BETWEEN UNBOUNDED PRECEDING
+                    invoices.date ROWS BETWEEN UNBOUNDED PRECEDING
                   AND UNBOUNDED FOLLOWING
                 ) AS moment_last_invoice_id,
-                stripe.invoices.customer_id,
-                stripe.invoices.subscription_id,
-                stripe.invoices_items.plan_id,
-                stripe.invoices_items.plan->>'interval' as plan_interval,
-                stripe.invoices_items.plan->>'name' as plan_name,
-                (stripe.invoices.subtotal - (stripe.invoices.total - coalesce(stripe.invoices.tax, 0))) as discount_amount,
-                stripe.invoices_items.amount as invoice_amount
+                invoices.customer as customer_id,
+                invoices.subscription as subscription_id,
+                invoices_items.plan->>'id' as plan_id,
+                invoices_items.plan->>'interval' as plan_interval,
+                invoices_items.plan->>'name' as plan_name,
+                (invoices.subtotal - (invoices.total - coalesce(invoices.tax, 0))) as discount_amount,
+                invoices_items.amount as invoice_amount
               FROM
-                stripe.invoices_items
-                INNER JOIN stripe.invoices ON (stripe.invoices.id = stripe.invoices_items.invoice_id)
-                LEFT JOIN stripe.charges ON (stripe.charges.id = stripe.invoices.charge_id)
-                INNER JOIN stripe.subscriptions ON (stripe.subscriptions.id = stripe.invoices.subscription_id)
+                ${SCHEMA}.invoices
+                CROSS JOIN jsonb_to_recordset(invoices.lines) as invoices_items(plan_id varchar, plan jsonb, amount bigint, type varchar)
+                LEFT JOIN ${SCHEMA}.charges ON (charges.id = invoices.charge)
+                INNER JOIN ${SCHEMA}.subscriptions ON (subscriptions.id = invoices.subscription)
               WHERE
-                stripe.invoices.paid = TRUE AND
-                (stripe.charges.refunded = FALSE OR stripe.charges.refunded IS NULL) AND
-                stripe.invoices_items.type = 'subscription'
+                invoices.paid = TRUE AND
+                (charges.refunded = FALSE OR charges.refunded IS NULL) AND
+                invoices_items.type = 'subscription'
               ORDER BY
-                stripe.invoices.subscription_id
+                invoices.subscription
             ) as paid_invoices_subquery
             WHERE (invoice_amount - discount_amount) > 0`;
 
@@ -64,20 +64,20 @@ const subscriptionStatus = `CASE WHEN is_first_charge = 1 THEN 1 WHEN is_last_ch
 
 const allInvoicesSubquery = `SELECT
             cc.*,
-            stripe.customers.description as customer_description,
-            stripe.customers.id as stripe_customer_id
+            customers.description as customer_description,
+            customers.id as stripe_customer_id
           FROM
             (${normalizedPaidInvoicesSubquery}) AS cc,
-            stripe.subscriptions,
-            stripe.customers
+            ${SCHEMA}.subscriptions,
+            ${SCHEMA}.customers
           WHERE
-            stripe.subscriptions.id = cc.subscription_id AND
-            stripe.customers.id = stripe.subscriptions.customer_id AND
+            subscriptions.id = cc.subscription_id AND
+            customers.id = subscriptions.customer AND
             (
-              stripe.subscriptions.ended_at > INTERVAL '28 day' +
-              COALESCE(stripe.subscriptions.trial_end, stripe.subscriptions.start)
+              subscriptions.ended_at > INTERVAL '28 day' +
+              COALESCE(subscriptions.trial_end, subscriptions.start)
             OR
-              stripe.subscriptions.ended_at IS NULL
+              subscriptions.ended_at IS NULL
             )`;
 
 const mrrMovementSubquery = `WITH all_invoices AS (${allInvoicesSubquery})
