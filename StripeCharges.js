@@ -55,7 +55,7 @@ cube(`StripeCharges`, {
 
     totalNetRevenue: {
       description: `Gross amount - failed charges amount - refunded amount`,
-      sql: `${totalGrossAmount} - ${totalFailedAmount} - ${totalRefundedAmount}`,
+      sql: `${totalGrossAmount} - COALESCE(${totalFailedAmount}, 0) - COALESCE(${totalRefundedAmount}, 0)`,
       type: `number`,
       format: `currency`
     },
@@ -78,7 +78,7 @@ cube(`StripeCharges`, {
     },
 
     amount: {
-      sql: `1.0 * ${CUBE}.amount / 100`,
+      sql: `1.0 * COALESCE(${CUBE}.amount, 0) / 100`,
       type: `number`,
       format: `currency`
     },
