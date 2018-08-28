@@ -14,6 +14,7 @@ cube(`StripeSaaSMetrics`, {
   measures: {
     mrr: {
       title: `MRR`,
+      description: `Monthly Recurring Revenue (MRR) is the monthly-normalized amounts of all active subscriptions.`,
       sql: `mrr`,
       type: `sum`,
       rollingWindow: {
@@ -25,6 +26,7 @@ cube(`StripeSaaSMetrics`, {
 
     arr: {
       title: `ARR`,
+      description: `Annual Run Rate (ARR) is the current value of your business projected out over the next year.`,
       sql: `${mrr} * 12`,
       type: `number`,
       format: `currency`
@@ -66,11 +68,13 @@ cube(`StripeSaaSMetrics`, {
       }]
     },
 
-    mrrMovement: {
-      title: `MRR Movement`,
+    mrrChange: {
+      title: `MRR Change`,
+      description: `The MRR change for a given period. Commonly used with MRR Change Type dimension.`,
       sql: `mrr`,
       type: `sum`,
-      format: `currency`
+      format: `currency`,
+      drillMembers: [StripeCustomers.description, StripeCustomers.email, StripeCustomers.mrr, plan]
     },
 
     newSubscriptions: {
@@ -113,6 +117,7 @@ cube(`StripeSaaSMetrics`, {
 
     mrrChurnRate: {
       title: `MRR Churn Rate`,
+      description: `The churned revenue for a given period is a sum of lost MRR from churned customers. `,
       sql: `-100 * (${churnedMovement30Days}) / NULLIF(${mrr30daysAgo}, 0)`,
       type: `number`,
       format: `percent`,
@@ -128,11 +133,13 @@ cube(`StripeSaaSMetrics`, {
       rollingWindow: {
         trailing: `unbounded`,
         offset: `end`
-      }
+      },
+      drillMembers: [StripeCustomers.description, StripeCustomers.email, StripeCustomers.mrr, plan]
     },
 
     arpa: {
       title: `ARPA`,
+      description: `Average Revenue Per Account (ARPA) is total MRR divided by the number of active customers.`,
       sql: `${mrr} / NULLIF(${activeCustomers}, 0)`,
       type: `number`,
       format: `currency`,
@@ -140,6 +147,9 @@ cube(`StripeSaaSMetrics`, {
 
     ltv: {
       title: `LTV`,
+      description:
+        `Customer Lifetime Value (LTV) represents the average revenue that a customer generates before they churn.
+         It is equal to ARPA divided by the churn rate.`,
       sql: `${arpa} / NULLIF(${mrrChurnRate} / 100.0, 0)`,
       type: `number`,
       format: `currency`
@@ -148,17 +158,15 @@ cube(`StripeSaaSMetrics`, {
 
   dimensions: {
     plan: {
+      description: `Subscription plan name`,
       sql: `plan_name`,
       type: `string`
     },
 
-    // customer: {
-    //   sql: `customer_description`,
-    //   type: `string`
-    // },
-
-    movementType: {
-      sql: `mrr_type`,
+    MRRChangeType: {
+      title: `MRR Change Type`,
+      description: `The four major ways to change MRR are through new subscriptions, expansions, contractions, and churn.`,
+      sql: `initcap(mrr_type)`,
       type: `string`
     },
 
