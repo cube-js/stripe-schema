@@ -1,5 +1,6 @@
 dashboardTemplate(`StripeSaaSAnalytics`, {
   title: `Stripe Saas Analytics`,
+  description: `For subscription based businesses, if you are not subscription business feel free to delete it`,
   items: [
   {
     title: 'MRR',
